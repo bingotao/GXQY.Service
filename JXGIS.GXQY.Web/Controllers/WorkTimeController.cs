@@ -414,7 +414,7 @@ where pw2.ProjectId = 'e74f39aa-43be-4dfb-b6bc-5ab27f6932ee' and(p.EndTime is nu
                         w.ProjectId = prjId;
                     }
 
-                    wms_month = wms_month.OrderBy(w => w.Index).ToList();
+                    wms_month = wms_month.OrderBy(w => w.Index).ThenBy(w => w.WorkerName).ToList();
 
                     wms_month.Add(new WorkerMonth2()
                     {

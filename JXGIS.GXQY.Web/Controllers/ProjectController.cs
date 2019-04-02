@@ -206,7 +206,7 @@ namespace JXGIS.GXQY.Web.Controllers
                         var workers = db.Database.SqlQuery<Project_Worker>(@"select wk.Name,pw.* from Project_Worker pw
   left join  Worker wk on pw.WorkerId=wk.Id
   where pw.ProjectId=@prjId
-  order by pw.[Index] asc", new SqlParameter("@prjId", prjId)).ToList();
+  order by pw.[Index] asc,wk.Name asc", new SqlParameter("@prjId", prjId)).ToList();
 
                         for (int i = 0, j = workers.Count; i < j; i++)
                         {

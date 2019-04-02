@@ -15,6 +15,8 @@ namespace JXGIS.GXQY.Web.Controllers
     {
         public class WorkTime3
         {
+            public int? Index { get; set; }
+
             public string WorkerId { get; set; }
 
             public string WorkerName { get; set; }
@@ -49,6 +51,8 @@ namespace JXGIS.GXQY.Web.Controllers
 
         public class WorkMonth3
         {
+            public int? Index { get; set; }
+
             public string WorkerId { get; set; }
 
             public string WorkerName { get; set; }
@@ -1035,16 +1039,17 @@ where wt.month=@month
 ),
 --本项目科研情况
 wt1 as (
-select workerid,date,WorkType from worktime wt 
+select wt.workerid,date,WorkType from worktime wt 
 where wt.month=@month and wt.ProjectId=@prjId
 )
 --人员本月科研情况
-select t.date,t.workerid,t.workername,
+select t.date,t.workerid,t.workername,pw.[Index],
 (case when wt.WorkType is null then t.type else '科研' end) worktype,
 (case when wt1.WorkType is null then t.type else '科研' end) pworktype
  from (select dt.*,wk.id workerid,wk.name workername from dt,wk) t
 left join wt on t.date=wt.date and t.workerid=wt.workerid
-left join wt1 on t.date=wt1.date and t.workerid=wt1.workerid";
+left join wt1 on t.date=wt1.date and t.workerid=wt1.workerid
+left join Project_Worker pw on t.workerid=pw.workerid and pw.ProjectId=@prjId";
             var sqlWS = @"
 select t.*,ws.BasePay,ws.bonus,ws.AccumulationFund,ws.SocialSecurity from (select distinct wk.Id workerid,wk.Name workername from Project_Worker pw left join worker wk on pw.WorkerId=wk.id where pw.ProjectId=@prjId) t 
 left join WorkerSalary ws on ws.WorkerId=t.workerid where ws.Month=@month
@@ -1065,9 +1070,10 @@ left join WorkerSalary ws on ws.WorkerId=t.workerid where ws.Month=@month
             }
 
             var wks = (from wt in wts
-                       group wt by new { wt.WorkerId, wt.WorkerName } into g
+                       group wt by new { wt.WorkerId, wt.WorkerName, wt.Index } into g
                        select new WorkMonth3
                        {
+                           Index = g.Key.Index,
                            WorkerId = g.Key.WorkerId,
                            WorkerName = g.Key.WorkerName,
                            WorkTime = g.OrderBy(t => t.Date).ToList(),
@@ -1081,6 +1087,7 @@ left join WorkerSalary ws on ws.WorkerId=t.workerid where ws.Month=@month
                         where wk.WorkerId == ws.WorkerId
                         select new WorkMonth3
                         {
+                            Index = wk.Index,
                             WorkerId = wk.WorkerId,
                             WorkerName = wk.WorkerName,
                             WorkTime = wk.WorkTime,
@@ -1091,7 +1098,7 @@ left join WorkerSalary ws on ws.WorkerId=t.workerid where ws.Month=@month
                             BasePay_R = wk.PResearchDay * (ws.BasePay / wk.WorkDay),
                             AccumulationFund_R = wk.PResearchDay * (ws.AccumulationFund / wk.WorkDay),
                             SocialSecurity_R = wk.PResearchDay * (ws.SocialSecurity / wk.WorkDay),
-                        }).OrderBy(t => t.WorkerName).ToList();
+                        }).OrderBy(t => t.Index).ThenBy(t=>t.WorkerName).ToList();
 
             var sum = (from wk in wkms
                        group wk by 1 into g
