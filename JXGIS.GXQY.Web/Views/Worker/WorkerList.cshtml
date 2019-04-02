@@ -1,0 +1,147 @@
+﻿<div id="workerlistwindow" class="easyui-window wlw" title="人员清单" data-options="modal:true,closed:true">
+    <div class="worklistpanel">
+        <div>
+            <a id="wk_btn_edit" href="#" class="easyui-linkbutton" data-options="iconCls:'icon-edit'">修改人员</a>
+            &ensp;
+            <a id="wk_btn_add" href="#" class="easyui-linkbutton" data-options="iconCls:'icon-add'">新增人员</a>
+            &ensp;
+            <a id="wk_btn_remove" href="#" class="easyui-linkbutton" data-options="iconCls:'icon-cancel'">删除人员</a>
+        </div>
+        <div id="workerlist">
+
+        </div>
+        <div style="text-align: right">
+            <a id="wk_btn_ok" style="width:100px" href="#" class="easyui-linkbutton" data-options="iconCls:'icon-ok'">确定</a>
+            <a id="wk_btn_cancel" style="width:100px" href="#" class="easyui-linkbutton" data-options="iconCls:'icon-cancel'">取消</a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .worklistpanel {
+        width: 600px;
+        padding: 10px;
+    }
+
+    #workerlist {
+        height: 200px;
+        border: 1px solid #eee;
+        border-radius: 3px;
+        margin: 10px 0;
+        position: relative;
+    }
+
+        #workerlist > div {
+            margin: 5px 10px;
+            padding: 2px 10px;
+            border: 1px dotted #aaa;
+            border-radius: 3px;
+            float: left;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+            #workerlist > div.active {
+                border: 1px solid #0094ff !important;
+                background: #0094ff !important;
+                color: white;
+            }
+
+            #workerlist > div:hover {
+                background: #eee;
+            }
+</style>
+
+
+<script>
+    (function () {
+        wl = window.WorkerList || {};
+        var $window = $("#workerlistwindow");
+
+        $window = $('.wlw');
+
+        var $workerList = $("#workerlist");
+
+        wl.getWorkers = function (sf) {
+            Post("../Worker/GetWorkers", null, sf);
+        }
+
+        function getWorkers() {
+            wl.getWorkers(function (wks) {
+                (wks || []).map(function (wk) {
+                    var $wk = $("<div></div>").html(wk.Name)
+                          .data('worker', wk)
+                          .on('click', function () {
+                              var wk = $(this).data('worker');
+                              $(this).toggleClass('active');
+                              $(WorkerList).trigger("workerClick", [wk]);
+                          })
+                          .appendTo($workerList);
+                });
+            });
+        }
+
+        wl.clearWorkers = function () {
+            $workerList.html(null);
+        }
+
+        wl.show = function () {
+            wl.clearWorkers();
+            $window.window({ closed: false });
+            getWorkers();
+        }
+
+        wl.hidden = function () {
+            wl.clearWorkers();
+            $window.window({ closed: true });
+        }
+
+        wl.getSelected = function () {
+            var workers = [];
+            $workerList.find('.active').each(function (i, dom) {
+                var wk = $(dom).data("worker");
+                workers.push(wk);
+            });
+            return workers;
+        }
+
+        $window.find('#wk_btn_cancel').on('click', function () {
+            wl.hidden();
+        });
+
+        $window.find('#wk_btn_ok').on('click', function () {
+            var workers = wl.getSelected();
+            console.log(workers);
+            $(WorkerList).trigger("okClick", { workers: workers });
+        });
+
+        $(Worker0).on('saveSuccess', function (e, data) {
+            wl.show();
+        });
+
+        $window.find('#wk_btn_add').on('click', function () {
+            Worker0.show();
+        });
+
+        $window.find('#wk_btn_edit').on('click', function () {
+            var wk = wl.getSelected()[0];
+            if (wk) {
+                Worker0.show(wk.Id);
+            } else {
+                Messager.error("请选择人员后再操作！");
+            }
+        });
+
+        $window.find('#wk_btn_remove').on('click', function () {
+            var wk = wl.getSelected()[0];
+            if (wk) {
+                console.log(wk);
+            } else {
+                Messager.error("请选择人员后再操作！");
+            }
+        });
+
+
+        WorkerList = wl;
+    })();
+</script>

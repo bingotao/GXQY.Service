@@ -1,0 +1,170 @@
+﻿<div id="projectWindow" class="easyui-window" title="项目"
+     data-options="modal:true,closed:true">
+    <div id="projectform">
+        <input id="p_d_Id" class="easyui-textbox" data-options="cls:'hidden'" etype="textbox" fieldName="Id" />
+        <div>
+            <label>项目名称：</label>
+            <input id="p_d_Name" class="easyui-textbox" etype="textbox" type="text" fieldName="Name" style="width:200px" />
+        </div>
+        <div>
+            <label>项目金额：</label>
+            <input id="p_d_ContractAmount" class="easyui-numberbox" etype="numberbox" type="text" fieldName="ContractAmount" style="width:200px" />
+        </div>
+        @*<div>
+                <label>项目类型：</label>
+                <input id="p_d_Type" class="easyui-textbox" etype="textbox" type="text" fieldName="Type" style="width:200px" data-options="editable:false" />
+            </div>
+            <div>
+                <label>所属部门：</label>
+                <input id="p_d_Department" class="easyui-textbox" etype="textbox" type="text" fieldName="Department" style="width:200px" />
+            </div>*@
+        <div>
+            <label>起始时间：</label>
+            <input id="p_d_StartTime" class="easyui-datebox" etype="datebox" type="text" fieldName="StartTime" style="width:200px" data-options="editable:false" />
+        </div>
+        <div>
+            <label>结束时间：</label>
+            <input id="p_d_EndTime" class="easyui-datebox" etype="datebox" type="text" fieldName="EndTime" style="width:200px" data-options="editable:false" />
+        </div>
+        <div>
+            <a id="p_btn_save" style="width:100px" href="#" class="easyui-linkbutton" data-options="iconCls:'icon-save'">保存</a>
+            &ensp;
+            <a id="p_btn_cancel" style="width:100px" href="#" class="easyui-linkbutton" data-options="iconCls:'icon-cancel'">取消</a>
+        </div>
+    </div>
+</div>
+
+<style>
+    #projectform {
+        padding: 10px;
+    }
+
+        #projectform > div {
+            width: 400px;
+            margin: 10px;
+            text-align: center;
+        }
+
+        #projectform .hidden {
+            display: none;
+        }
+</style>
+
+<script>
+    (function () {
+        var entity = {};
+        var P = window.Project || {};
+        var $projectWindow = $('#projectWindow');
+        P.$projectWindow = $projectWindow;
+
+        var formInputs = $projectWindow.find("input[id^=p_d_]");
+
+        P.show = function (id) {
+            P.clearForm();
+            $projectWindow.window({ iconCls: (!id ? 'icon-add' : 'icon-edit'), title: "&emsp;" + (!id ? "新增" : "修改") + "项目", closed: false });
+
+            if (id) {
+                P.getProject(id, function (data) {
+                    entity = data;
+                    P.setFormValues(entity);
+                });
+            }
+        }
+
+        P.hidden = function () {
+            P.clearForm();
+            $projectWindow.window({ closed: true });
+        }
+
+        function clearForm() {
+            formInputs.each(function () {
+                var $this = $(this);
+                var etype = $this.attr('etype');
+                console.log($this.attr('fieldName'))
+                if (etype) {
+                    $this[etype]('setValue', null);
+                }
+            });
+            entity = {};
+            mObj = {};
+        }
+        P.clearForm = clearForm;
+
+        function getFormValues() {
+            var entity = {};
+            formInputs.each(function () {
+                var $this = $(this);
+                var etype = $this.attr('etype');
+                var fieldName = $this.attr('fieldName');
+                if (etype && fieldName) {
+                    entity[fieldName] = $this[etype]('getValue');
+                }
+            });
+            return entity;
+        }
+        P.getFormValues = getFormValues;
+
+        function setFormValues(entity) {
+            formInputs.each(function () {
+                var $this = $(this);
+                var etype = $this.attr('etype');
+                var fieldName = $this.attr('fieldName');
+                if (etype && fieldName) {
+                    $this[etype]('setValue', entity[fieldName]);
+                }
+            });
+        }
+        P.setFormValues = setFormValues;
+
+        // 使用 mObj 记录修改
+        var mObj = {};
+        formInputs.each(function () {
+            var $this = $(this);
+            var etype = $this.attr('etype');
+            var fieldName = $this.attr('fieldName');
+            if (etype) {
+                $this[etype]({
+                    onChange: function (n, o) {
+                        mObj[fieldName] = n;
+                    }
+                });
+            }
+        });
+
+
+        $('#p_btn_cancel').on('click', function () {
+            P.hidden();
+        });
+
+        $('#p_btn_save').on('click', function () {
+            mObj.Id = entity.Id;
+            P.modifyProject(mObj, function (data) {
+                Messager.success("保存成功！");
+                $(P).trigger('saveSuccess');
+            });
+        });
+
+        P.getProject = function (id, sf) {
+            Post("../Project/GetProject", {
+                id: id
+            }, sf);
+        }
+
+        P.getProjects = function (sf) {
+            Post("../Project/GetProjects", null, sf);
+        }
+
+        P.modifyProject = function (project, sf) {
+            Post("../Project/ModifyProject", {
+                project: JSON.stringify(mObj)
+            }, sf);
+        }
+        P.removeProject = function (id, sf) {
+            Post("../Project/RemoveProject", {
+                id: id
+            }, sf);
+        };
+
+        Project = P;
+    })();
+</script>

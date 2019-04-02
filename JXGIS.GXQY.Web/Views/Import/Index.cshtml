@@ -1,0 +1,123 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Index</title>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+</head>
+<body>
+    <div>
+        <label>工资发放时间:<input id="date" type="date" /></label>
+        <label>工资文件：<input id="file" type="file" accept="application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" /></label>
+        <button id="btnUpload">上传</button>
+        <button id="btnUpdate">更新</button>
+    </div>
+    <div>
+        <div id="errors">
+
+        </div>
+        <div id="infos">
+
+        </div>
+        <div id="data">
+
+        </div>
+    </div>
+    <script>
+        var Data = null;
+        $(function () {
+            var date = new Date();
+            var $date = $('#date').val(date.getFullYear() + "-" + ((date.getMonth() + 1) > 9 ? date.getMonth() + 1 : "0" + (date.getMonth() + 1)) + "-" + (date.getDate() > 9 ? date.getDate() : ("0" + date.getDate())));
+            var $file = $('#file');
+            var $btnUpload = $('#btnUpload');
+            var $btnUpdate = $('#btnUpdate');
+
+            var $errors = $("#errors");
+            var $infos = $("#infos");
+            var $data = $("#data");
+
+            $btnUpdate.on('click', function () {
+                var date = $date.val();
+                $.post("Update", { date: date }, function () {
+
+                });
+            });
+            $btnUpload.on('click', function () {
+                var date = $date.val();
+                var file = $file[0].files[0];
+                console.log(date, file);
+                if (!date) { alert("请选择工资发放时间"); return; }
+                if (!file) { alert("请选择文件"); return; }
+
+                var formData = new FormData();
+
+                formData.append("date", date);
+                formData.append("file", file);
+
+                $.ajax({
+                    url: "Upload",
+                    type: 'POST',
+                    data: formData,
+                    mimeType: "multipart/form-data",
+                    contentType: false,
+                    cache: false,
+                    processData: false,
+                    success: function (data, textStatus, jqXHR) {
+                        Data = JSON.parse(data);
+                        $errors.empty();
+                        $infos.empty();
+                        $data.empty();
+
+                        if (Data.Errors && Data.Errors.length) {
+                            Data.Errors.map(function (x) {
+                                $("<div></div>").html(x).appendTo($errors);
+                            })
+                        }
+
+                        if (Data.Infos && Data.Infos.length) {
+                            Data.Infos.map(function (x) {
+                                $("<div></div>").html(x).appendTo($infos);
+                            })
+                        }
+
+                        if (Data.WorkerSalary && Data.WorkerSalary.length) {
+                            var $tb = $("<table><tr><th>Id</th><th>WorkerId</th><th>WorkerName</th><th>Month</th><th>BasePay</th><th>Bonus</th><th>AccumulationFund</th><th>SocialSecurity</th><th>SS1</th><th>SS2</th><th>SS3</th><th>SS4</th><th>SS5</th><th>Bonus1</th><th>MonthX</th></tr></table>");
+                            Data.WorkerSalary.map(function (x) {
+                                var tr = "<tr>" +
+                                "<td>" + x.Id + "</td>" +
+                                "<td>" + x.WorkerId + "</td>" +
+                                "<td>" + x.WorkerName + "</td>" +
+                                "<td>" + x.Month + "</td>" +
+                                "<td>" + x.BasePay + "</td>" +
+                                "<td>" + x.Bonus + "</td>" +
+                                "<td>" + x.AccumulationFund + "</td>" +
+                                "<td>" + x.SocialSecurity + "</td>" +
+                                "<td>" + x.SS1 + "</td>" +
+                                "<td>" + x.SS2 + "</td>" +
+                                "<td>" + x.SS3 + "</td>" +
+                                "<td>" + x.SS4 + "</td>" +
+                                "<td>" + x.SS5 + "</td>" +
+                                "<td>" + x.Bonus1 + "</td>" +
+                                "<td>" + x.MonthX + "</td>" +
+                            "</tr>";
+                                $(tr).appendTo($tb);
+                            });
+                            $tb.appendTo($data);
+                        }
+
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        alert("上传错误");
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

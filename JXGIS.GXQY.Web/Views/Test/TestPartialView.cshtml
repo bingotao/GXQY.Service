@@ -1,0 +1,144 @@
+﻿<div id="_test">
+    <div class="easyui-window worklistform" title="人员清单" data-options="modal:true,closed:true">
+        <div class="worklistpanel">
+            <div>
+                <a href="#" class="easyui-linkbutton btn-edit" data-options="iconCls:'icon-edit'">修改人员</a>
+                &ensp;
+                <a href="#" class="easyui-linkbutton btn-add" data-options="iconCls:'icon-add'">新增人员</a>
+                &ensp;
+                <a href="#" class="easyui-linkbutton btn-cancel" data-options="iconCls:'icon-cancel'">删除人员</a>
+            </div>
+            <div class="workerlist">
+
+            </div>
+            <div style="text-align: right">
+                <a style="width:100px" href="#" class="easyui-linkbutton btn-ok" data-options="iconCls:'icon-ok'">确定</a>
+                <a style="width:100px" href="#" class="easyui-linkbutton btn-cancel" data-options="iconCls:'icon-cancel'">取消</a>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    .worklistform .worklistpanel {
+        width: 600px;
+        padding: 10px;
+    }
+
+    .worklistform .workerlist {
+        height: 200px;
+        border: 1px solid #eee;
+        border-radius: 3px;
+        margin: 10px 0;
+        position: relative;
+    }
+
+        .worklistform .workerlist > div {
+            margin: 5px 10px;
+            padding: 2px 10px;
+            border: 1px dotted #aaa;
+            border-radius: 3px;
+            float: left;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+            .worklistform .workerlist > div.active {
+                border: 1px solid #0094ff !important;
+                background: #0094ff !important;
+                color: white;
+            }
+
+            .worklistform .workerlist > div:hover {
+                background: #eee;
+            }
+</style>
+
+
+<script>
+    (function () {
+        var cmps = window.cmps || {};
+        var template = $('#_test').html();
+
+        $('#_test').remove();
+
+        var test = function () {
+            var t = this;
+            var $root = $(template);
+
+            var $workerList = $root.find('.workerlist'),
+                $btnAdd = $root.find('.btn-add').linkbutton(),
+                $btnEdit = $root.find('.btn-edit').linkbutton(),
+                $btnRemove = $root.find('.btn-remove').linkbutton(),
+                $btnOK = $root.find('.btn-ok').linkbutton(),
+                $btnCancel = $root.find('.btn-cancel').linkbutton();
+
+            t.$ = {
+                $root: $root,
+                $btnAdd: $btnAdd,
+                $btnRemove: $btnRemove,
+                $btnOK: $btnOK,
+                $btnCancel: $btnCancel
+            };
+
+            function getWorkers() {
+                t.getWorkers(function (wks) {
+                    (wks || []).map(function (wk) {
+                        var $wk = $("<div></div>").html(wk.Name)
+                              .data('worker', wk)
+                              .on('click', function () {
+                                  var wk = $(this).data('worker');
+                                  $(this).toggleClass('active');
+                                  $(t).trigger("workerClick", [wk]);
+                              })
+                              .appendTo($workerList);
+                    });
+                });
+            }
+
+            t.getWorkers = function (sf) {
+                Post("../Worker/GetWorkers", null, sf);
+            }
+
+            t.clearWorkers = function () {
+                $workerList.html(null);
+            }
+
+            t.show = function () {
+                t.clearWorkers();
+                $root.window({ closed: false });
+                getWorkers();
+            }
+
+            t.hidden = function () {
+                t.clearWorkers();
+                $root.window({ closed: true });
+            }
+
+            t.getSelected = function () {
+                var workers = [];
+                $workerList.find('.active').each(function (i, dom) {
+                    var wk = $(dom).data("worker");
+                    workers.push(wk);
+                });
+                return workers;
+            }
+
+            $btnCancel.on('click', function () {
+                t.hidden();
+            });
+
+            $btnOK.on('click', function () {
+                var workers = t.getSelected();
+                console.log(workers);
+                $(t).trigger("okClick", { workers: workers });
+            });
+
+            $root.appendTo(document.body);
+
+            return t;
+        };
+
+        cmps.test = test;
+        window.cmps = cmps;
+    })();
+</script>

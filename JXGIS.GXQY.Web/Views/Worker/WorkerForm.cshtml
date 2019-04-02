@@ -1,0 +1,132 @@
+﻿<div id="workerWindow" class="easyui-window" data-options="modal:true,closed:true">
+    <div class="workerform">
+        <input id="w_d_Id" class="easyui-textbox" data-options="cls:'hidden'" etype="textbox" fieldName="Id" />
+        <div>
+            <label>姓名：</label>
+            <input id="w_d_Name" class="easyui-textbox" etype="textbox" type="text" fieldName="Name" style="width:200px" />
+        </div>
+        <div>
+            <a id="w_btn_save" style="width:100px" href="#" class="easyui-linkbutton" data-options="iconCls:'icon-save'">保存</a>
+            &ensp;
+            <a id="w_btn_cancel" style="width:100px" href="#" class="easyui-linkbutton" data-options="iconCls:'icon-cancel'">取消</a>
+        </div>
+    </div>
+</div>
+<style>
+    #workerWindow {
+        padding: 10px;
+    }
+
+    .workerform > div {
+        width: 400px;
+        margin: 10px;
+        text-align: center;
+    }
+
+    .workerform .hidden {
+        display: none;
+    }
+</style>
+<script>
+    (function () {
+        var entity = {};
+        var W = window.Worker0 || {};
+        var $window = $('#workerWindow');
+        W.$window = $window;
+
+        var $formInputs = $window.find("input[id^=w_d_]");
+        W.show = function (id) {
+            W.clearForm();
+            $window.window({ iconCls: (!id ? 'icon-add' : 'icon-edit'), title: "&emsp;" + (!id ? "新增" : "修改") + "人员", closed: false });
+
+            if (id) {
+                W.getWorker(id, function (data) {
+                    entity = data;
+                    W.setFormValues(entity);
+                });
+            }
+        };
+
+        W.hidden = function () {
+            W.clearForm();
+            $window.window({ closed: true });
+        }
+
+        W.clearForm = function () {
+            $formInputs.each(function () {
+                var $this = $(this);
+                var etype = $this.attr('etype');
+                if (etype) {
+                    $this[etype]('setValue', null);
+                }
+            });
+            entity = {};
+            mObj = {};
+        }
+
+        W.getFormValues = function () {
+            var entity = {};
+            $formInputs.each(function () {
+                var $this = $(this);
+                var etype = $this.attr('etype');
+                var fieldName = $this.attr('fieldName');
+                if (etype && fieldName) {
+                    entity[fieldName] = $this[etype]('getValue');
+                }
+            });
+            return entity;
+        }
+
+        W.setFormValues = function (entity) {
+            $formInputs.each(function () {
+                var $this = $(this);
+                var etype = $this.attr('etype');
+                var fieldName = $this.attr('fieldName');
+                if (etype && fieldName) {
+                    $this[etype]('setValue', entity[fieldName]);
+                }
+            });
+        }
+
+        // 使用 mObj 记录修改
+        var mObj = {};
+        $formInputs.each(function () {
+            var $this = $(this);
+            var etype = $this.attr('etype');
+            var fieldName = $this.attr('fieldName');
+            if (etype) {
+                $this[etype]({
+                    onChange: function (n, o) {
+                        mObj[fieldName] = n;
+                    }
+                });
+            }
+        });
+
+        $('#w_btn_cancel').on('click', function () {
+            W.hidden();
+        });
+
+        $('#w_btn_save').on('click', function () {
+            mObj.Id = entity.Id;
+            W.modifyWorker(mObj, function (data) {
+                Messager.success("保存成功！");
+                $(W).trigger('saveSuccess');
+            });
+        });
+
+        W.modifyWorker = function (worker, sf) {
+            Post("../Worker/ModifyWorker", {
+                json: JSON.stringify(mObj)
+            }, sf);
+        }
+
+        W.getWorker = function (id, sf) {
+            Post("../Worker/GetWorker", {
+                id: id
+            }, sf);
+        }
+
+        Worker0 = W;
+    })();
+</script>
